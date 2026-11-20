@@ -1,0 +1,63 @@
+name: "Manufact Leaderboard"
+description: "Rescan your MCP server on the Manufact leaderboard after each deploy and report its new score."
+author: "Manufact"
+branding:
+  icon: "award"
+  color: "gray-dark"
+
+inputs:
+  api-key:
+    description: "A Manufact API key from the workspace that verified the server. Store it as a secret."
+    required: true
+  url:
+    description: "The MCP endpoint URL of the server, as listed on the leaderboard."
+    required: true
+  wait:
+    description: "Wait for the rescan to finish and report the score (true), or only start it (false)."
+    required: false
+    default: "true"
+  timeout-minutes:
+    description: "How long to wait for the rescan before giving up."
+    required: false
+    default: "10"
+  fail-on-error:
+    description: "Fail the step when the rescan can't start or fails. By default it only warns, so a rescan never fails your deploy."
+    required: false
+    default: "false"
+  api-url:
+    description: "Manufact API base URL."
+    required: false
+    default: "https://api.manufact.com"
+  site-url:
+    description: "Manufact website base URL, for the report link."
+    required: false
+    default: "https://manufact.com"
+
+outputs:
+  score:
+    description: "The server's score out of 100 after the rescan, empty if there is none."
+    value: ${{ steps.rescan.outputs.score }}
+  status:
+    description: "The rescan's status: completed, failed, running (timed out waiting) or started (wait is false)."
+    value: ${{ steps.rescan.outputs.status }}
+  slug:
+    description: "The server's leaderboard slug."
+    value: ${{ steps.rescan.outputs.slug }}
+  report-url:
+    description: "Link to the server's leaderboard report."
+    value: ${{ steps.rescan.outputs.report-url }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: rescan
+      shell: bash
+      env:
+        MANUFACT_API_KEY: ${{ inputs.api-key }}
+        SERVER_URL: ${{ inputs.url }}
+        WAIT: ${{ inputs.wait }}
+        TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+        API_URL: ${{ inputs.api-url }}
+        SITE_URL: ${{ inputs.site-url }}
+      run: bash "$GITHUB_ACTION_PATH/rescan.sh"
